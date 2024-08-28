@@ -8,8 +8,9 @@ kovi 的点赞插件，可在config.json里配置。
 
 ```rust
 let config = serde_json::from_value(json!({
-    "today": [], //储存今天赞过的人数
+    "today": [], //储存今天赞过的人
     "data_time": 1, //储存数据保存的时间戳 无需在意这个
+    "like_times": 10, //点赞次数
     "msg": {
         "cmd": "赞我", //触发命令
         "like": "已为你点赞10次", //成功
