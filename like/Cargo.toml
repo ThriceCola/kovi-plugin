@@ -1,9 +1,9 @@
 [package]
 name = "kovi-plugin-like"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 keywords = ["kovi", "kovi-plugin"]
-description = "Kovi plugin like"
+description = "kovi 的点赞插件，可在config.json里配置。"
 license = "MPL-2.0"
 authors = ["Threkork <threkork@hotmail.com>"]
 
