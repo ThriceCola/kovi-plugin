@@ -1,8 +1,10 @@
 pub use kovi::tokio;
 use kovi::{
+    async_move,
+    bot::runtimebot::kovi_api::KoviApi,
     log::info,
     utils::{load_json_data, save_json_data},
-    PluginBuilder,
+    PluginBuilder as p,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -29,8 +31,9 @@ struct Msg {
 }
 
 #[kovi::plugin]
-pub async fn main(mut p: PluginBuilder) {
-    let mut path = p.get_data_path();
+async fn main() {
+    let bot = p::get_runtime_bot();
+    let mut path = bot.get_data_path();
     path.push("config.json");
 
     let config: Config = {
@@ -70,39 +73,44 @@ pub async fn main(mut p: PluginBuilder) {
         }
         config
     };
-    let msg = config.msg.clone();
 
+    let msg = Arc::new(config.msg.clone());
+    let path = Arc::new(path);
     let config_arc = Arc::new(Mutex::new(config));
-    let bot = p.build_runtime_bot();
 
-    p.on_msg({
-        let config_clone = Arc::clone(&config_arc);
-        let path = path.clone();
-        move |e| {
-            if e.borrow_text() != Some(&msg.cmd) {
-                return;
-            }
+    p::on_msg(async_move!(e; bot, msg, config_arc, path; {
+        if e.borrow_text() != Some(&msg.cmd) {
+            return;
+        }
 
-            let mut config_lock = config_clone.lock().unwrap();
+        {
+            let config_lock = config_arc.lock().unwrap();
 
             if config_lock.today.contains(&e.user_id) {
                 e.reply_and_quote(&msg.today);
                 return;
             }
+        }
 
-            match bot.send_like_return(e.user_id, 10) {
+        let res = bot.send_like_return(e.user_id, 10).await;
+
+        {
+            let mut config_lock = config_arc.lock().unwrap();
+
+            match res {
                 Ok(_) => {
                     e.reply_and_quote(&msg.like);
                     config_lock.today.push(e.user_id);
-                    save_json_data(&*config_lock, &path).unwrap();
+                    save_json_data(&*config_lock, &*path).unwrap();
                 }
                 Err(_) => e.reply_and_quote(&msg.do_not_like_you),
             };
         }
-    });
+    }));
 
-    tokio::spawn({
-        let config_clone_for_reset = Arc::clone(&config_arc);
+    p::cron("0 0 * * *", move || {
+        let config_clone_for_reset = config_arc.clone();
+        let path = path.clone();
         async move {
             loop {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
@@ -120,8 +128,9 @@ pub async fn main(mut p: PluginBuilder) {
                     .unwrap()
                     .as_secs();
                 info!("like插件正在清理");
-                save_json_data(&*config, &path).unwrap();
+                save_json_data(&*config, &*path).unwrap();
             }
         }
-    });
+    })
+    .unwrap();
 }
