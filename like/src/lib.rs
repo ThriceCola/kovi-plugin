@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     sync::{Arc, Mutex},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -112,24 +112,15 @@ async fn main() {
         let config_clone_for_reset = config_arc.clone();
         let path = path.clone();
         async move {
-            loop {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                let seconds_since_midnight = now.as_secs() % 86400;
-                let seconds_until_midnight = 86400 - seconds_since_midnight;
-
-                // 等待直到下一次午夜
-                tokio::time::sleep(Duration::from_secs(seconds_until_midnight)).await;
-
-                // 清空 `today`
-                let mut config = config_clone_for_reset.lock().unwrap();
-                config.today.clear();
-                config.data_time = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
-                info!("like插件正在清理");
-                save_json_data(&*config, &*path).unwrap();
-            }
+            // 清空 `today`
+            let mut config = config_clone_for_reset.lock().unwrap();
+            config.today.clear();
+            config.data_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            info!("like插件正在清理");
+            save_json_data(&*config, &*path).unwrap();
         }
     })
     .unwrap();
