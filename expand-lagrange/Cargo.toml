@@ -8,4 +8,4 @@ license = "MPL-2.0"
 authors = ["Threkork <threkork@hotmail.com>"]
 
 [dependencies]
-kovi = ">= 0.8.2-rc1"
+kovi = ">= 0.8.2"
