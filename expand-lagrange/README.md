@@ -9,11 +9,9 @@ Kovi 的 Api 拓展插件。
 合并转发例子：
 
 ```rust
-use kovi::{
-    // 三个 trait，第一个用于 RuntimeBot，第二个用于 Message，第三个用于 Vec
-    expand::lagrange::{LagrangeApi, LagrangeMessage, LagrangeVec},
-    Message, PluginBuilder as p,
-};
+use kovi::{Message, PluginBuilder as p};
+// 三个 trait，第一个用于 RuntimeBot，第二个用于 Message，第三个用于 Vec
+use kovi_plugin_expand_lagrange::{LagrangeApi, LagrangeMessage, LagrangeVec};
 
 #[kovi::plugin]
 async fn main() {

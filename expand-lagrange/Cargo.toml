@@ -1,8 +1,8 @@
 [package]
 name = "kovi-plugin-expand-lagrange"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-keywords = ["kovi", "kovi-plugin", "kovi-expand"]
+keywords = ["kovi", "kovi-plugin", "kovi-plugin-expand", "kovi-expand"]
 description = "Kovi 的 Lagrange Api拓展。"
 license = "MPL-2.0"
 authors = ["Threkork <threkork@hotmail.com>"]
