@@ -1,6 +1,6 @@
-use kovi::log::error;
+use kovi::bot::runtimebot::onebot_api::send_and_return;
 use kovi::serde_json::json;
-use kovi::tokio::sync::oneshot;
+use kovi::tokio;
 use kovi::{
     bot::{
         message::Segment,
@@ -80,12 +80,16 @@ pub trait LagrangeApi {
         busid: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn friend_poke(
+    fn friend_poke(&self, user_id: i64);
+
+    fn group_poke(&self, group_id: i64, user_id: i64);
+
+    fn friend_poke_return(
         &self,
         user_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn group_poke(
+    fn group_poke_return(
         &self,
         group_id: i64,
         user_id: i64,
@@ -291,7 +295,38 @@ impl LagrangeApi for RuntimeBot {
         send_and_return(&self, send_api).await
     }
 
-    async fn friend_poke(&self, user_id: i64) -> Result<ApiReturn, ApiReturn> {
+    fn friend_poke(&self, user_id: i64) {
+        let send_api = SendApi::new(
+            "friend_poke",
+            json!({
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        let api_tx = self.api_tx.clone();
+        tokio::spawn(async move {
+            api_tx.send((send_api, None)).await.unwrap();
+        });
+    }
+
+    fn group_poke(&self, group_id: i64, user_id: i64) {
+        let send_api = SendApi::new(
+            "group_poke",
+            json!({
+                "group_id": group_id,
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        let api_tx = self.api_tx.clone();
+        tokio::spawn(async move {
+            api_tx.send((send_api, None)).await.unwrap();
+        });
+    }
+
+    async fn friend_poke_return(&self, user_id: i64) -> Result<ApiReturn, ApiReturn> {
         let send_api = SendApi::new(
             "friend_poke",
             json!({
@@ -303,7 +338,7 @@ impl LagrangeApi for RuntimeBot {
         send_and_return(&self, send_api).await
     }
 
-    async fn group_poke(&self, group_id: i64, user_id: i64) -> Result<ApiReturn, ApiReturn> {
+    async fn group_poke_return(&self, group_id: i64, user_id: i64) -> Result<ApiReturn, ApiReturn> {
         let send_api = SendApi::new(
             "group_poke",
             json!({
@@ -363,21 +398,5 @@ impl LagrangeMessage for Message {
             }),
         });
         self
-    }
-}
-
-async fn send_and_return(bot: &RuntimeBot, send_api: SendApi) -> Result<ApiReturn, ApiReturn> {
-    #[allow(clippy::type_complexity)]
-    let (api_tx, api_rx): (
-        oneshot::Sender<Result<ApiReturn, ApiReturn>>,
-        oneshot::Receiver<Result<ApiReturn, ApiReturn>>,
-    ) = oneshot::channel();
-    bot.api_tx.send((send_api, Some(api_tx))).await.unwrap();
-    match api_rx.await {
-        Ok(v) => v,
-        Err(e) => {
-            error!("{e}");
-            panic!()
-        }
     }
 }

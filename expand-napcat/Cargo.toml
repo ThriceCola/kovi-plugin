@@ -1,11 +1,12 @@
 [package]
-name = "kovi-plugin-expand-lagrange"
-version = "0.2.1"
+name = "kovi-plugin-expand-napcat"
+version = "0.1.1"
 edition = "2021"
 keywords = ["kovi", "kovi-plugin", "kovi-plugin-expand", "kovi-expand"]
-description = "Kovi 的 Lagrange Api拓展。"
+description = "Kovi 的 Napcat Api拓展。"
 license = "MPL-2.0"
 authors = ["Threkork <threkork@hotmail.com>"]
 
 [dependencies]
-kovi = ">= 0.8.3"
+kovi = ">= 0.8.2"
+serde = "1"
