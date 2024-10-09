@@ -1,6 +1,5 @@
-use kovi::bot::runtimebot::onebot_api::send_and_return;
+use kovi::bot::runtimebot::{send_api_request_with_forget, send_api_request_with_response};
 use kovi::serde_json::json;
-use kovi::tokio;
 use kovi::{
     bot::{
         message::Segment,
@@ -98,18 +97,20 @@ pub trait LagrangeApi {
 
 
 impl LagrangeApi for RuntimeBot {
-    async fn fetch_custom_face(&self) -> Result<ApiReturn, ApiReturn> {
+    fn fetch_custom_face(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new("fetch_custom_face", json!({}), &rand_echo());
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn get_friend_msg_history(
+    fn get_friend_msg_history(
         &self,
         user_id: i64,
         message_id: i64,
         count: i64,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "get_friend_msg_history",
             json!({
@@ -120,14 +121,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
-    async fn get_group_msg_history(
+    fn get_group_msg_history(
         &self,
         group_id: i64,
         message_id: i64,
         count: i64,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "get_group_msg_history",
             json!({
@@ -138,7 +139,7 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
     /// 构造合并转发
@@ -156,7 +157,10 @@ impl LagrangeApi for RuntimeBot {
     ///
     /// bot.send_private_msg(bot.main_admin, Message::new().add_forward_resid(resid));
     /// ```
-    async fn send_forward_msg(&self, messages: Vec<Node>) -> Result<ApiReturn, ApiReturn> {
+    fn send_forward_msg(
+        &self,
+        messages: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "send_forward_msg",
             json!({
@@ -165,14 +169,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn send_group_forward_msg(
+    fn send_group_forward_msg(
         &self,
         group_id: i64,
         messages: Vec<Node>,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "send_group_forward_msg",
             json!({
@@ -182,14 +186,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn send_private_forward_msg(
+    fn send_private_forward_msg(
         &self,
         user_id: i64,
         messages: Vec<Segment>,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "send_private_forward_msg",
             json!({
@@ -199,16 +203,16 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn upload_group_file(
+    fn upload_group_file(
         &self,
         group_id: i64,
         file: &Path,
         name: &str,
         folder: Option<&str>,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let params = match folder {
             Some(folder) => json!({
                 "group_id": group_id,
@@ -225,15 +229,15 @@ impl LagrangeApi for RuntimeBot {
 
         let send_api = SendApi::new("upload_group_file", params, &rand_echo());
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn upload_private_file(
+    fn upload_private_file(
         &self,
         user_id: i64,
         file: &Path,
         name: &str,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "upload_private_file",
             json!({
@@ -244,10 +248,13 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn get_group_root_files(&self, group_id: i64) -> Result<ApiReturn, ApiReturn> {
+    fn get_group_root_files(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "get_group_root_files",
             json!({
@@ -256,14 +263,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn get_group_files_by_folder(
+    fn get_group_files_by_folder(
         &self,
         group_id: i64,
         folder_id: &str,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "get_group_files_by_folder",
             json!({
@@ -273,15 +280,15 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn get_group_file_url(
+    fn get_group_file_url(
         &self,
         group_id: i64,
         file_id: &str,
         busid: i64,
-    ) -> Result<ApiReturn, ApiReturn> {
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "get_group_file_url",
             json!({
@@ -292,7 +299,7 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
     fn friend_poke(&self, user_id: i64) {
@@ -304,10 +311,7 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        let api_tx = self.api_tx.clone();
-        tokio::spawn(async move {
-            api_tx.send((send_api, None)).await.unwrap();
-        });
+        send_api_request_with_forget(&self.api_tx, send_api);
     }
 
     fn group_poke(&self, group_id: i64, user_id: i64) {
@@ -320,13 +324,13 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        let api_tx = self.api_tx.clone();
-        tokio::spawn(async move {
-            api_tx.send((send_api, None)).await.unwrap();
-        });
+        send_api_request_with_forget(&self.api_tx, send_api);
     }
 
-    async fn friend_poke_return(&self, user_id: i64) -> Result<ApiReturn, ApiReturn> {
+    fn friend_poke_return(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "friend_poke",
             json!({
@@ -335,10 +339,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    async fn group_poke_return(&self, group_id: i64, user_id: i64) -> Result<ApiReturn, ApiReturn> {
+    fn group_poke_return(
+        &self,
+        group_id: i64,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "group_poke",
             json!({
@@ -348,7 +356,7 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 }
 
