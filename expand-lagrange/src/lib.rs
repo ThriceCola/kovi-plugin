@@ -93,6 +93,14 @@ pub trait LagrangeApi {
         group_id: i64,
         user_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_group_reaction(
+        &self,
+        group_id: i64,
+        message_id: i64,
+        code: &str,
+        is_add: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 }
 
 
@@ -352,6 +360,27 @@ impl LagrangeApi for RuntimeBot {
             json!({
                 "group_id": group_id,
                 "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_group_reaction(
+        &self,
+        group_id: i64,
+        message_id: i64,
+        code: &str,
+        is_add: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_group_reaction",
+            json!({
+                "group_id": group_id,
+                "message_id": message_id,
+                "reaction_id": code,
+                "is_add": is_add,
             }),
             &rand_echo(),
         );
