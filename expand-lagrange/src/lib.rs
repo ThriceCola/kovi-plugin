@@ -406,6 +406,8 @@ pub trait LagrangeVec {
     /// bot.send_private_msg(bot.main_admin, Message::new().add_forward_resid(resid));
     /// ```
     fn add_forward_node(self, uin: &str, name: &str, content: Message) -> Vec<Segment>;
+
+    fn push_forward_node(&mut self, uin: &str, name: &str, content: Message);
 }
 
 impl LagrangeVec for Vec<Segment> {
@@ -420,10 +422,22 @@ impl LagrangeVec for Vec<Segment> {
         });
         self
     }
+    fn push_forward_node(&mut self, uin: &str, name: &str, content: Message) {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "name": name,
+                "uin": uin,
+                "content": content,
+            }),
+        });
+    }
 }
 
 pub trait LagrangeMessage {
     fn add_forward_resid(self, resid: &str) -> Message;
+
+    fn push_forward_resid(&mut self, resid: &str);
 }
 
 impl LagrangeMessage for Message {
@@ -435,5 +449,14 @@ impl LagrangeMessage for Message {
             }),
         });
         self
+    }
+
+    fn push_forward_resid(&mut self, resid: &str) {
+        self.push(Segment {
+            type_: "forward".to_string(),
+            data: json!({
+                "id": resid,
+            }),
+        });
     }
 }

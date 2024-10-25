@@ -1,33 +1,272 @@
-use kovi::log::error;
-use kovi::serde_json::json;
-use kovi::tokio::sync::oneshot;
+use kovi::bot::runtimebot::{rand_echo, send_api_request_with_response};
+use kovi::bot::SendApi;
+use kovi::serde_json::{self, json};
 use kovi::{
-    bot::{
-        message::Segment,
-        runtimebot::{rand_echo, RuntimeBot},
-        ApiReturn, SendApi,
-    },
+    bot::{message::Segment, runtimebot::RuntimeBot, ApiReturn},
     Message,
 };
 use serde::{Deserialize, Serialize};
 
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct NapcatStatus {
+//     pub status: i64,
+//     #[serde(rename = "extStatus")]
+//     pub ext_status: i64,
+//     #[serde(rename = "batteryStatus")]
+//     pub battery_status: i64,
+// }
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NapcatStatus {
-    pub status: i64,
-    #[serde(rename = "extStatus")]
-    pub ext_status: i64,
-    #[serde(rename = "batteryStatus")]
-    pub battery_status: i64,
+pub struct InvitedRequest {
+    pub request_id: i64,
+    pub invitor_uin: i64,
+    pub invitor_nick: String,
+    pub group_id: i64,
+    pub group_name: String,
+    pub checked: bool,
+    pub actor: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JoinRequest {
+    pub request_id: i64,
+    pub requester_uin: i64,
+    pub requester_nick: String,
+    pub message: String,
+    pub group_id: i64,
+    pub group_name: String,
+    pub checked: bool,
+    pub actor: i64,
+}
+
+impl InvitedRequest {
+    pub fn new(
+        request_id: i64,
+        invitor_uin: i64,
+        invitor_nick: String,
+        group_id: i64,
+        group_name: String,
+        checked: bool,
+        actor: i64,
+    ) -> Self {
+        Self {
+            request_id,
+            invitor_uin,
+            invitor_nick,
+            group_id,
+            group_name,
+            checked,
+            actor,
+        }
+    }
+}
+
+impl JoinRequest {
+    pub fn new(
+        request_id: i64,
+        requester_uin: i64,
+        requester_nick: String,
+        message: String,
+        group_id: i64,
+        group_name: String,
+        checked: bool,
+        actor: i64,
+    ) -> Self {
+        Self {
+            request_id,
+            requester_uin,
+            requester_nick,
+            message,
+            group_id,
+            group_name,
+            checked,
+            actor,
+        }
+    }
 }
 
 pub trait NapcatApi {
-    fn set_qq_avatar(
+    fn set_qq_profile(
         &self,
-        file: &str,
+        nickname: &str,
+        company: &str,
+        email: &str,
+        college: &str,
+        personal_note: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_online_clients(
+        &self,
+        no_cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn mark_msg_as_read(
+        &self,
+        message_id: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn send_group_forward_msg(
+        &self,
+        group_id: i64,
+        nodes: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn send_private_forward_msg(
+        &self,
+        user_id: i64,
+        nodes: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_msg_history(
+        &self,
+        group_id: i64,
+        message_seq: Option<i64>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn ocr_image(
+        &self,
+        image: &str,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn get_group_system_msg(
         &self,
+        invited_requests: Vec<InvitedRequest>,
+        join_requests: Vec<JoinRequest>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_essence_msg_list(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_group_portrait(
+        &self,
+        group_id: i64,
+        file: &str,
+        cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_essence_msg(
+        &self,
+        message_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn delete_essence_msg(
+        &self,
+        message_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_group_sign(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn send_group_notice(
+        &self,
+        group_id: i64,
+        content: &str,
+        image: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_notice(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn upload_group_file(
+        &self,
+        group_id: i64,
+        file: &str,
+        name: &str,
+        folder: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn delete_group_file(
+        &self,
+        group_id: i64,
+        file_id: &str,
+        busid: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn create_group_file_folder(
+        &self,
+        group_id: i64,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn delete_group_folder(
+        &self,
+        group_id: i64,
+        folder_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_file_system_info(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_root_files(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_files_by_folder(
+        &self,
+        group_id: i64,
+        folder_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_group_file_url(
+        &self,
+        group_id: i64,
+        file_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn upload_private_file(
+        &self,
+        user_id: i64,
+        file: &str,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn download_file(
+        &self,
+        url: &str,
+        thread_count: i32,
+        headers: Vec<String>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn ark_share_peer(
+        &self,
+        user_id: Option<&str>,
+        phone_number: Option<&str>,
+        group_id: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn ark_share_group(
+        &self,
+        group_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_robot_uin_range(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_online_status(
+        &self,
+        status: i32,
+        ext_status: i32,
+        battery_status: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn get_friends_with_category(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn set_qq_avatar(
+        &self,
+        file: &str,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn get_file(
@@ -35,57 +274,456 @@ pub trait NapcatApi {
         file_id: &str,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn download_file(
-        &self,
-        url: &str,
-        thread_count: u8,
-        headers: Option<&str>,
-    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
-
     fn forward_friend_single_msg(
         &self,
         user_id: i64,
-        message_id: i64,
+        message: Vec<Node>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn forward_group_single_msg(
         &self,
         group_id: i64,
-        message_id: i64,
+        message: Vec<Node>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn set_msg_emoji_like(&self, message_id: &str, emoji_id: &str);
 
-    fn set_msg_emoji_like_return(
+    fn set_msg_emoji_like(
         &self,
-        message_id: &str,
+        message_id: i64,
         emoji_id: &str,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn mark_private_msg_as_read(&self, user_id: i64);
+    fn translate_en2zh(
+        &self,
+        words: Vec<String>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn mark_group_msg_as_read(&self, group_id: i64);
+    fn send_forward_msg(
+        &self,
+        message_type: &str,
+        user_id: Option<i64>,
+        group_id: Option<i64>,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn mark_private_msg_as_read_return(
+    fn send_forward_msg_to_user(
+        &self,
+        user_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn send_forward_msg_to_group(
+        &self,
+        group_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+
+    fn mark_private_msg_as_read(
         &self,
         user_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn mark_group_msg_as_read_return(
+    fn mark_group_msg_as_read(
         &self,
         group_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn get_robot_uin_range(
+
+    fn get_friend_msg_history(
+        &self,
+        user_id: i64,
+        message_seq: &str,
+        count: i64,
+        reverse_order: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+
+    // create_collection
+
+    // get_collection_list
+
+    fn set_self_longnick(
+        &self,
+        long_nick: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    // get_self_longnick
+
+    // get_self_profile
+
+    // set_self_profile
+
+    // get_friend_profile
+
+    // get_friend_list
+
+    // get_friend_list_ex
+
+    // get_friend_list_simple
+
+    // get_friend_list_simple_ex
+
+    // get_friend_list_simple_ex2
+
+    // get_friend_list_simple_ex3
+
+    // get_friend_list_simple_ex4
+
+    // get_friend_list_simple_ex5
+
+    // get_friend_list_simple_ex6
+
+    fn get_recent_contact(
+        &self,
+        count: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    fn mark_all_as_read(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn set_online_status(&self, status: i32);
+
+    fn get_profile_like(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+
+    fn fetch_custom_face(
+        &self,
+        count: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+
+    // fetch_emoji_like
+
+    // set_input_status
+
+    // get_group_info_ex
+
+    // get_group_ignore_add_request
+
+    // _del_group_notice
+
+    // fetch_user_profile_like
+
+    // friend_poke
+
+    // group_poke
+
+    // nc_get_packet_status
+
+    // nc_get_user_status
+
+    // nc_get_rkey
+
+    // get_group_shut_list
 }
 
 
 impl NapcatApi for RuntimeBot {
-    async fn set_qq_avatar(&self, file: &str) -> Result<ApiReturn, ApiReturn> {
+    fn mark_private_msg_as_read(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "mark_private_msg_as_read",
+            json!({
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn mark_group_msg_as_read(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "mark_group_msg_as_read",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+
+    fn get_recent_contact(
+        &self,
+        count: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_recent_contact",
+            json!({
+                "count": count,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_profile_like(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("get_profile_like", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn fetch_custom_face(
+        &self,
+        count: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "fetch_custom_face",
+            json!({
+                "count": count,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn mark_all_as_read(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("_mark_all_as_read", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_self_longnick(
+        &self,
+        long_nick: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_self_longnick",
+            json!({
+                "longNick": long_nick,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_friend_msg_history(
+        &self,
+        user_id: i64,
+        message_seq: &str,
+        count: i64,
+        reverse_order: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_friend_msg_history",
+            json!({
+                "user_id": user_id,
+                "message_seq": message_seq,
+                "count": count,
+                "reverseOrder": reverse_order,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_forward_msg(
+        &self,
+        message_type: &str,
+        user_id: Option<i64>,
+        group_id: Option<i64>,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let mut map = serde_json::Map::new();
+
+        map.insert("message_type".to_string(), json!(message_type));
+
+        if let Some(uid) = user_id {
+            map.insert("user_id".to_string(), json!(uid));
+        }
+
+        if let Some(gid) = group_id {
+            map.insert("group_id".to_string(), json!(gid));
+        }
+
+        map.insert("message".to_string(), json!(message));
+
+        let send_api = SendApi::new(
+            "send_forward_msg",
+            serde_json::Value::Object(map),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_forward_msg_to_user(
+        &self,
+        user_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "send_forward_msg",
+            json!({
+                "message_type": "private",
+                "user_id": user_id,
+                "message": message,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_forward_msg_to_group(
+        &self,
+        group_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "send_forward_msg",
+            json!({
+                "message_type": "group",
+                "group_id": group_id,
+                "message": message,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+
+    fn translate_en2zh(
+        &self,
+        words: Vec<String>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "translate_en2zh",
+            json!({
+                "words": words,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn ark_share_peer(
+        &self,
+        user_id: Option<&str>,
+        phone_number: Option<&str>,
+        group_id: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let mut map = serde_json::Map::new();
+
+        if let Some(uid) = user_id {
+            map.insert("user_id".to_string(), json!(uid));
+        }
+        if let Some(phone) = phone_number {
+            map.insert("phoneNumber".to_string(), json!(phone));
+        }
+        if let Some(gid) = group_id {
+            map.insert("group_id".to_string(), json!(gid));
+        }
+
+        let send_api = SendApi::new("ArkSharePeer", serde_json::Value::Object(map), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn ark_share_group(
+        &self,
+        group_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "ArkShareGroup",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_msg_emoji_like(
+        &self,
+        message_id: i64,
+        emoji_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_msg_emoji_like",
+            json!({
+                "message_id": message_id,
+                "emoji_id": emoji_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn forward_group_single_msg(
+        &self,
+        group_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "forward_group_single_msg",
+            json!({
+                "group_id": group_id,
+                "message": message,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn forward_friend_single_msg(
+        &self,
+        user_id: i64,
+        message: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "forward_friend_single_msg",
+            json!({
+                "user_id": user_id,
+                "message": message,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_file(
+        &self,
+        file_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_file",
+            json!({
+                "file_id": file_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_qq_avatar(
+        &self,
+        file: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "set_qq_avatar",
             json!({
@@ -94,71 +732,604 @@ impl NapcatApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_and_return(&self, send_api).await
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+    fn get_friends_with_category(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("get_friends_with_category", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_online_status(
+        &self,
+        status: i32,
+        ext_status: i32,
+        battery_status: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_online_status",
+            json!({
+                "status": status,
+                "ext_status": ext_status,
+                "battery_status": battery_status,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_robot_uin_range(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("get_robot_uin_range", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn download_file(
+        &self,
+        url: &str,
+        thread_count: i32,
+        headers: Vec<String>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "download_file",
+            json!({
+                "url": url,
+                "thread_count": thread_count,
+                "headers": headers,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn upload_private_file(
+        &self,
+        user_id: i64,
+        file: &str,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "upload_private_file",
+            json!({
+                "user_id": user_id,
+                "file": file,
+                "name": name,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_files_by_folder(
+        &self,
+        group_id: i64,
+        folder_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_files_by_folder",
+            json!({
+                "group_id": group_id,
+                "folder_id": folder_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_file_url(
+        &self,
+        group_id: i64,
+        file_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_file_url",
+            json!({
+                "group_id": group_id,
+                "file_id": file_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_root_files(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_root_files",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_file_system_info(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_file_system_info",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn delete_group_folder(
+        &self,
+        group_id: i64,
+        folder_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "delete_group_folder",
+            json!({
+                "group_id": group_id,
+                "folder_id": folder_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn create_group_file_folder(
+        &self,
+        group_id: i64,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "create_group_file_folder",
+            json!({
+                "group_id": group_id,
+                "name": name,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn delete_group_file(
+        &self,
+        group_id: i64,
+        file_id: &str,
+        busid: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "delete_group_file",
+            json!({
+                "group_id": group_id,
+                "file_id": file_id,
+                "busid": busid,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_group_sign(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "send_group_sign",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn delete_essence_msg(
+        &self,
+        message_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "delete_essence_msg",
+            json!({
+                "message_id": message_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_essence_msg(
+        &self,
+        message_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_essence_msg",
+            json!({
+                "message_id": message_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_essence_msg_list(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_essence_msg_list",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_system_msg(
+        &self,
+        invited_requests: Vec<InvitedRequest>,
+        join_requests: Vec<JoinRequest>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_system_msg",
+            json!({
+                "invited_requests": invited_requests,
+                "join_requests": join_requests,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn ocr_image(
+        &self,
+        image: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "ocr_image",
+            json!({
+                "image": image,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_msg_history(
+        &self,
+        group_id: i64,
+        message_seq: Option<i64>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = if let Some(message_seq) = message_seq {
+            SendApi::new(
+                "get_group_msg_history",
+                json!({
+                    "group_id": group_id,
+                    "message_seq": message_seq,
+                }),
+                &rand_echo(),
+            )
+        } else {
+            SendApi::new(
+                "get_group_msg_history",
+                json!({
+                    "group_id": group_id,
+                }),
+                &rand_echo(),
+            )
+        };
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_private_forward_msg(
+        &self,
+        user_id: i64,
+        nodes: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "send_private_forward_msg",
+            json!({
+                "user_id": user_id,
+                "message": nodes,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_group_forward_msg(
+        &self,
+        group_id: i64,
+        nodes: Vec<Node>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "send_group_forward_msg",
+            json!({
+                "group_id": group_id,
+                "message": nodes,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn mark_msg_as_read(
+        &self,
+        message_id: i32,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "mark_msg_as_read",
+            json!({
+                "message_id": message_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_online_clients(
+        &self,
+        no_cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_online_clients",
+            json!({
+                "no_cache": no_cache,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_qq_profile(
+        &self,
+        nickname: &str,
+        company: &str,
+        email: &str,
+        college: &str,
+        personal_note: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "set_qq_profile",
+            json!({
+                "nickname": nickname,
+                "company": company,
+                "email": email,
+                "college": college,
+                "personal_note": personal_note,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn upload_group_file(
+        &self,
+        group_id: i64,
+        file: &str,
+        name: &str,
+        folder: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = if let Some(folder) = folder {
+            SendApi::new(
+                "upload_group_file",
+                json!({
+                    "group_id": group_id,
+                    "file": file,
+                    "name": name,
+                    "folder":folder
+                }),
+                &rand_echo(),
+            )
+        } else {
+            SendApi::new(
+                "upload_group_file",
+                json!({
+                    "group_id": group_id,
+                    "file": file,
+                    "name": name,
+                }),
+                &rand_echo(),
+            )
+        };
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_notice(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "_get_group_notice",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn send_group_notice(
+        &self,
+        group_id: i64,
+        content: &str,
+        image: Option<&str>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "_send_group_notice",
+            json!({
+                "group_id": group_id,
+                "content": content,
+                "image": image,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn set_group_portrait(
+        &self,
+        group_id: i64,
+        file: &str,
+        cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = if cache {
+            SendApi::new(
+                "set_group_portrait",
+                json!({
+                    "group_id": group_id,
+                    "file": file,
+                    "cache": 1,
+                }),
+                &rand_echo(),
+            )
+        } else {
+            SendApi::new(
+                "set_group_portrait",
+                json!({
+                    "group_id": group_id,
+                    "file": file,
+                    "cache": 0,
+                }),
+                &rand_echo(),
+            )
+        };
+
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 }
 
 pub type Node = Segment;
 
-pub trait LagrangeVec {
-    /// 为了方便使用，这个 trait 可以给 Vec<Segment> 便捷使用
+pub trait NapcatVec {
+    /// 伪造合并转发消息, 无需伪造使用 add_forward_node()
     ///
     /// # Examples
     ///
     /// ```
     /// let nodes = Vec::new()
-    ///     .add_forward_node("10000", "测试", Message::from("some"))
-    ///     .add_forward_node("10000", "测试2", Message::from("some"));
-    /// let res = bot.send_forward_msg(nodes).await.unwrap();
-    /// let resid = res.data.as_str().unwrap();
+    ///     .add_fake_forward_node("10000", "测试", Message::from("some"))
+    ///     .add_fake_forward_node("10000", "测试2", Message::from("some"));
     ///
-    /// bot.send_private_msg(bot.main_admin, Message::new().add_forward_resid(resid));
+    /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
-    fn add_forward_node(self, uin: &str, name: &str, content: Message) -> Vec<Node>;
+    fn add_fake_forward_node(self, user_id: &str, nickname: &str, content: Message) -> Vec<Node>;
+
+    /// 伪造合并转发消息, 无需伪造使用 push_fake_forward_node()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut nodes = Vec::new();
+    ///
+    /// node.push_fake_forward_node("10000", "测试", Message::from("some"))
+    ///
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn push_fake_forward_node(&mut self, user_id: &str, nickname: &str, content: Message);
+
+
+    /// 合并转发消息, 使用消息id，伪造请使用 add_fake_forward_node()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let nodes = Vec::new()
+    ///     .add_forward_node("10000")
+    ///     .add_forward_node("10001");
+    ///
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn add_forward_node(self, id: &str) -> Vec<Node>;
+
+    /// 合并转发消息, 使用消息id，伪造请使用 push_fake_forward_node()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut nodes = Vec::new();
+    ///
+    /// node.push_forward_node("10000")
+    ///
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn push_forward_node(&mut self, id: &str);
 }
 
-impl LagrangeVec for Vec<Node> {
-    fn add_forward_node(mut self, uin: &str, name: &str, content: Message) -> Vec<Node> {
+impl NapcatVec for Vec<Node> {
+    fn add_fake_forward_node(
+        mut self,
+        user_id: &str,
+        nickname: &str,
+        content: Message,
+    ) -> Vec<Segment> {
         self.push(Segment {
             type_: "node".to_string(),
             data: json!({
-                "name": name,
-                "uin": uin,
+                "user_id": user_id,
+                "nickname": nickname,
                 "content": content,
             }),
         });
         self
     }
-}
-
-pub trait LagrangeMessage {
-    fn add_forward_resid(self, resid: &str) -> Message;
-}
-
-impl LagrangeMessage for Message {
-    fn add_forward_resid(mut self, resid: &str) -> Message {
+    fn push_fake_forward_node(&mut self, user_id: &str, nickname: &str, content: Message) {
         self.push(Segment {
-            type_: "forward".to_string(),
+            type_: "node".to_string(),
             data: json!({
-                "id": resid,
+                "user_id": user_id,
+                "nickname": nickname,
+                "content": content,
+            }),
+        });
+    }
+
+    fn add_forward_node(mut self, id: &str) -> Vec<Segment> {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "id": id,
             }),
         });
         self
     }
-}
 
-async fn send_and_return(bot: &RuntimeBot, send_api: SendApi) -> Result<ApiReturn, ApiReturn> {
-    #[allow(clippy::type_complexity)]
-    let (api_tx, api_rx): (
-        oneshot::Sender<Result<ApiReturn, ApiReturn>>,
-        oneshot::Receiver<Result<ApiReturn, ApiReturn>>,
-    ) = oneshot::channel();
-    bot.api_tx.send((send_api, Some(api_tx))).await.unwrap();
-    match api_rx.await {
-        Ok(v) => v,
-        Err(e) => {
-            error!("{e}");
-            panic!()
-        }
+    fn push_forward_node(&mut self, id: &str) {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "id": id,
+            }),
+        });
     }
 }
