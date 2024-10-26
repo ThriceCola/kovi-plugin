@@ -4,7 +4,7 @@ Kovi 的 Napcta Api 拓展插件。
 
 Napcta Api文档不齐全，如果出错请及时提交issue
 
-使用 ```cargo kovi add expand-napcat -t <PLUGIN_NAME>``` or ```cargo add kovi-plugin-expand-napcat -t <PLUGIN_NAME>``` 添加此拓展。
+使用 ```cargo kovi add expand-napcat -p <PLUGIN_NAME>``` or ```cargo add kovi-plugin-expand-napcat -p <PLUGIN_NAME>``` 添加此拓展。
 
 懒得写了，直接看 napcat 的文档就行了: [napcat](https://napneko.com/develop/api)
 
