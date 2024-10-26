@@ -2,7 +2,7 @@
 
 Kovi 的 Api 拓展插件。
 
-使用 ```cargo kovi add expand-lagrange``` or ```cargo add kovi-plugin-expand-lagrange``` 添加此拓展。
+使用 ```cargo kovi add expand-lagrange -t <PLUGIN_NAME>``` or ```cargo add kovi-plugin-expand-lagrange -t <PLUGIN_NAME>``` 添加此拓展。
 
 懒得写了，直接看 Lagrange 的文档就行了: [Largrange](https://lagrangedev.github.io/Lagrange.Doc/Lagrange.OneBot/API/Extend/)
 
