@@ -1,18 +1,18 @@
 [package]
-name = "kovi-plugin-expand-napcat"
-version = "0.0.5"
+authors = ["Threkork <threkork@hotmail.com>"]
+description = "Kovi 的 Napcat Api拓展。"
 edition = "2021"
 keywords = [
-    "kovi",
-    "kovi-plugin",
-    "kovi-plugin-expand",
-    "kovi-expand",
-    "napcat",
+  "kovi",
+  "kovi-plugin",
+  "kovi-plugin-expand",
+  "kovi-expand",
+  "napcat",
 ]
-description = "Kovi 的 Napcat Api拓展。"
 license = "MPL-2.0"
-authors = ["Threkork <threkork@hotmail.com>"]
+name = "kovi-plugin-expand-napcat"
 repository = "https://github.com/Threkork/kovi-plugin/"
+version = "0.1.0"
 
 [dependencies]
 kovi = ">= 0.8.4"

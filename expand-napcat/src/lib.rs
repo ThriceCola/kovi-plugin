@@ -358,22 +358,6 @@ pub trait NapcatApi {
 
     // get_friend_list
 
-    // get_friend_list_ex
-
-    // get_friend_list_simple
-
-    // get_friend_list_simple_ex
-
-    // get_friend_list_simple_ex2
-
-    // get_friend_list_simple_ex3
-
-    // get_friend_list_simple_ex4
-
-    // get_friend_list_simple_ex5
-
-    // get_friend_list_simple_ex6
-
     fn get_recent_contact(
         &self,
         count: i64,
@@ -406,9 +390,16 @@ pub trait NapcatApi {
 
     // fetch_user_profile_like
 
-    // friend_poke
+    fn friend_poke(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // group_poke
+    fn group_poke(
+        &self,
+        group_id: i64,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     // nc_get_packet_status
 
@@ -421,6 +412,38 @@ pub trait NapcatApi {
 
 
 impl NapcatApi for RuntimeBot {
+    fn friend_poke(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "friend_poke",
+            json!({
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn group_poke(
+        &self,
+        group_id: i64,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "group_poke",
+            json!({
+                "group_id": group_id,
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
     fn mark_private_msg_as_read(
         &self,
         user_id: i64,
