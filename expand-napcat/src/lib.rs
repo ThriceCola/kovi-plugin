@@ -16,7 +16,6 @@ use serde::{Deserialize, Serialize};
 //     pub battery_status: i64,
 // }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InvitedRequest {
     pub request_id: i64,
@@ -86,7 +85,7 @@ impl JoinRequest {
     }
 }
 
-pub trait NapcatApi {
+pub trait NapCatApi {
     fn set_qq_profile(
         &self,
         nickname: &str,
@@ -103,7 +102,7 @@ pub trait NapcatApi {
 
     fn mark_msg_as_read(
         &self,
-        message_id: i32,
+        message_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn send_group_forward_msg(
@@ -186,7 +185,7 @@ pub trait NapcatApi {
         &self,
         group_id: i64,
         file_id: &str,
-        busid: i32,
+        busid: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn create_group_file_folder(
@@ -233,7 +232,7 @@ pub trait NapcatApi {
     fn download_file(
         &self,
         url: &str,
-        thread_count: i32,
+        thread_count: i64,
         headers: Vec<String>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
@@ -255,9 +254,9 @@ pub trait NapcatApi {
 
     fn set_online_status(
         &self,
-        status: i32,
-        ext_status: i32,
-        battery_status: i32,
+        status: i64,
+        ext_status: i64,
+        battery_status: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn get_friends_with_category(
@@ -285,7 +284,6 @@ pub trait NapcatApi {
         group_id: i64,
         message: Vec<Node>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
-
 
     fn set_msg_emoji_like(
         &self,
@@ -318,7 +316,6 @@ pub trait NapcatApi {
         message: Vec<Node>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-
     fn mark_private_msg_as_read(
         &self,
         user_id: i64,
@@ -329,7 +326,6 @@ pub trait NapcatApi {
         group_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-
     fn get_friend_msg_history(
         &self,
         user_id: i64,
@@ -338,8 +334,11 @@ pub trait NapcatApi {
         reverse_order: bool,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-
-    // create_collection
+    fn create_collection(
+        &self,
+        brief: &str,
+        raw_data: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     // get_collection_list
 
@@ -356,7 +355,10 @@ pub trait NapcatApi {
 
     // get_friend_profile
 
-    // get_friend_list
+    fn get_friend_list(
+        &self,
+        no_cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn get_recent_contact(
         &self,
@@ -367,26 +369,39 @@ pub trait NapcatApi {
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-
     fn get_profile_like(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-
     fn fetch_custom_face(
         &self,
-        count: i64,
+        message_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // fetch_emoji_like
+    fn fetch_emoji_like(
+        &self,
+        message_id: i64,
+        emoji_id: &str,
+        emoji_type: &str,
+        group_id: Option<i64>,
+        user_id: Option<i64>,
+        count: Option<i64>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     // set_input_status
 
-    // get_group_info_ex
+    fn get_group_info_ex(
+        &self,
+        group_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     // get_group_ignore_add_request
 
-    // _del_group_notice
+    fn _del_group_notice(
+        &self,
+        group_id: &str,
+        notice_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     // fetch_user_profile_like
 
@@ -401,17 +416,173 @@ pub trait NapcatApi {
         user_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // nc_get_packet_status
+    fn nc_get_packet_status(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // nc_get_user_status
+    fn nc_get_user_status(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // nc_get_rkey
+    fn nc_get_rkey(&self)
+        -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    // get_group_shut_list
+    fn get_group_shut_list(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 }
 
+impl NapCatApi for RuntimeBot {
+    fn nc_get_user_status(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "nc_get_user_status",
+            json!({
+                "user_id": user_id,
+            }),
+            &rand_echo(),
+        );
 
-impl NapcatApi for RuntimeBot {
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn nc_get_rkey(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("nc_get_rkey", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn nc_get_packet_status(
+        &self,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new("nc_get_packet_status", json!({}), &rand_echo());
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_shut_list(
+        &self,
+        group_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_group_shut_list",
+            json!({
+                "group_id": group_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn _del_group_notice(
+        &self,
+        group_id: &str,
+        notice_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "_del_group_notice",
+            json!({
+                "group_id": group_id,
+                "notice_id": notice_id,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_friend_list(
+        &self,
+        no_cache: bool,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "get_friend_list",
+            json!({
+                "no_cache": no_cache,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn fetch_emoji_like(
+        &self,
+        message_id: i64,
+        emoji_id: &str,
+        emoji_type: &str,
+        group_id: Option<i64>,
+        user_id: Option<i64>,
+        count: Option<i64>,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let mut map = serde_json::Map::new();
+
+        map.insert("message_id".to_string(), json!(message_id));
+        map.insert("emojiId".to_string(), json!(emoji_id));
+        map.insert("emojiType".to_string(), json!(emoji_type));
+
+        if let Some(gid) = group_id {
+            map.insert("group_id".to_string(), json!(gid));
+        }
+
+        if let Some(uid) = user_id {
+            map.insert("user_id".to_string(), json!(uid));
+        }
+
+        if let Some(i) = count {
+            map.insert("count".to_string(), json!(i));
+        }
+
+        let send_api = SendApi::new(
+            "send_forward_msg",
+            serde_json::Value::Object(map),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn create_collection(
+        &self,
+        brief: &str,
+        raw_data: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        let send_api = SendApi::new(
+            "create_collection",
+            json!({
+                "brief": brief,
+                "rawData": raw_data,
+            }),
+            &rand_echo(),
+        );
+
+        send_api_request_with_response(&self.api_tx, send_api)
+    }
+
+    fn get_group_info_ex(
+        &self,
+        group_id: &str,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
+        {
+            let send_api = SendApi::new(
+                "get_group_info_ex",
+                json!({
+                    "group_id": group_id
+                }),
+                &rand_echo(),
+            );
+
+            send_api_request_with_response(&self.api_tx, send_api)
+        }
+    }
+
     fn friend_poke(
         &self,
         user_id: i64,
@@ -473,7 +644,6 @@ impl NapcatApi for RuntimeBot {
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
-
 
     fn get_recent_contact(
         &self,
@@ -623,7 +793,6 @@ impl NapcatApi for RuntimeBot {
         send_api_request_with_response(&self.api_tx, send_api)
     }
 
-
     fn translate_en2zh(
         &self,
         words: Vec<String>,
@@ -767,9 +936,9 @@ impl NapcatApi for RuntimeBot {
 
     fn set_online_status(
         &self,
-        status: i32,
-        ext_status: i32,
-        battery_status: i32,
+        status: i64,
+        ext_status: i64,
+        battery_status: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "set_online_status",
@@ -795,7 +964,7 @@ impl NapcatApi for RuntimeBot {
     fn download_file(
         &self,
         url: &str,
-        thread_count: i32,
+        thread_count: i64,
         headers: Vec<String>,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
@@ -932,7 +1101,7 @@ impl NapcatApi for RuntimeBot {
         &self,
         group_id: i64,
         file_id: &str,
-        busid: i32,
+        busid: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "delete_group_file",
@@ -1102,7 +1271,7 @@ impl NapcatApi for RuntimeBot {
 
     fn mark_msg_as_read(
         &self,
-        message_id: i32,
+        message_id: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "mark_msg_as_read",
@@ -1254,7 +1423,7 @@ impl NapcatApi for RuntimeBot {
 
 pub type Node = Segment;
 
-pub trait NapcatVec {
+pub trait NapCatVec {
     /// 伪造合并转发消息, 无需伪造使用 add_forward_node()
     ///
     /// # Examples
@@ -1280,7 +1449,6 @@ pub trait NapcatVec {
     /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
     fn push_fake_forward_node(&mut self, user_id: &str, nickname: &str, content: Message);
-
 
     /// 合并转发消息, 使用消息id，伪造请使用 add_fake_forward_node()
     ///
@@ -1309,7 +1477,7 @@ pub trait NapcatVec {
     fn push_forward_node(&mut self, id: &str);
 }
 
-impl NapcatVec for Vec<Node> {
+impl NapCatVec for Vec<Node> {
     fn add_fake_forward_node(
         mut self,
         user_id: &str,
