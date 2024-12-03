@@ -1430,12 +1430,30 @@ pub trait NapCatVec {
     ///
     /// ```
     /// let nodes = Vec::new()
-    ///     .add_fake_forward_node("10000", "测试", Message::from("some"))
-    ///     .add_fake_forward_node("10000", "测试2", Message::from("some"));
+    ///     .add_fake_node_from_content("10000", "测试", Message::from("some"))
+    ///     .add_fake_node_from_content("10000", "测试2", Message::from("some"));
     ///
     /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
-    fn add_fake_forward_node(self, user_id: &str, nickname: &str, content: Message) -> Vec<Node>;
+    fn add_fake_node_from_content(
+        self,
+        user_id: &str,
+        nickname: &str,
+        content: Message,
+    ) -> Vec<Node>;
+
+    /// 添加一个伪造的合并转发消息节点，通过指定的消息ID。
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut nodes = Vec::new();
+    ///
+    /// node.push_fake_node_from_id("10000", "测试", "10000")
+    ///
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn add_fake_node_from_id(self, user_id: &str, nickname: &str, id: &str) -> Vec<Segment>;
 
     /// 伪造合并转发消息, 无需伪造使用 push_fake_forward_node()
     ///
@@ -1444,41 +1462,73 @@ pub trait NapCatVec {
     /// ```
     /// let mut nodes = Vec::new();
     ///
-    /// node.push_fake_forward_node("10000", "测试", Message::from("some"))
+    /// node.push_fake_node_from_content("10000", "测试", Message::from("some"))
     ///
     /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
-    fn push_fake_forward_node(&mut self, user_id: &str, nickname: &str, content: Message);
+    fn push_fake_node_from_content(&mut self, user_id: &str, nickname: &str, content: Message);
 
-    /// 合并转发消息, 使用消息id，伪造请使用 add_fake_forward_node()
+    /// 在现有的 `Vec<Segment>` 中添加一个伪造的合并转发消息节点，通过指定的消息ID。
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut nodes = Vec::new();
+    /// nodes.push_fake_node_from_id("10000", "测试", "10000");
+    /// ```
+    fn push_fake_node_from_id(&mut self, user_id: &str, nickname: &str, id: &str);
+
+    /// 合并转发消息, 使用消息id，伪造请使用 add_fake_node_from_id()
     ///
     /// # Examples
     ///
     /// ```
     /// let nodes = Vec::new()
-    ///     .add_forward_node("10000")
-    ///     .add_forward_node("10001");
+    ///     .add_node_from_id("10000")
+    ///     .add_node_from_id("10001");
     ///
     /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
-    fn add_forward_node(self, id: &str) -> Vec<Node>;
+    fn add_node_from_id(self, id: &str) -> Vec<Node>;
 
-    /// 合并转发消息, 使用消息id，伪造请使用 push_fake_forward_node()
+    /// 合并转发消息, 使用消息内容，伪造请使用 add_fake_node_from_content()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let nodes = Vec::new().add_node_from_content(Message::from("Hello, world!"));
+    ///
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn add_node_from_content(self, content: Message) -> Vec<Node>;
+
+    /// 合并转发消息, 使用消息id，伪造请使用 push_fake_node_from_id()
     ///
     /// # Examples
     ///
     /// ```
     /// let mut nodes = Vec::new();
     ///
-    /// node.push_forward_node("10000")
+    /// node.push_node_from_id("10000")
     ///
     /// bot.send_private_msg(bot.main_admin, nodes);
     /// ```
-    fn push_forward_node(&mut self, id: &str);
+    fn push_node_from_id(&mut self, id: &str);
+
+    /// 在现有的 `Vec<Segment>` 中添加一个合并转发消息节点，使用消息内容，伪造请使用 push_fake_node_from_content()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut nodes = Vec::new();
+    /// nodes.push_node_from_content(Message::from("Hello, world!"));
+    /// bot.send_private_msg(bot.main_admin, nodes);
+    /// ```
+    fn push_node_from_content(&mut self, content: Message);
 }
 
 impl NapCatVec for Vec<Node> {
-    fn add_fake_forward_node(
+    fn add_fake_node_from_content(
         mut self,
         user_id: &str,
         nickname: &str,
@@ -1494,7 +1544,7 @@ impl NapCatVec for Vec<Node> {
         });
         self
     }
-    fn push_fake_forward_node(&mut self, user_id: &str, nickname: &str, content: Message) {
+    fn push_fake_node_from_content(&mut self, user_id: &str, nickname: &str, content: Message) {
         self.push(Segment {
             type_: "node".to_string(),
             data: json!({
@@ -1504,8 +1554,30 @@ impl NapCatVec for Vec<Node> {
             }),
         });
     }
+    fn add_fake_node_from_id(mut self, user_id: &str, nickname: &str, id: &str) -> Vec<Segment> {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "id": id,
+                "user_id": user_id,
+                "nickname": nickname,
+            }),
+        });
+        self
+    }
 
-    fn add_forward_node(mut self, id: &str) -> Vec<Segment> {
+    fn push_fake_node_from_id(&mut self, user_id: &str, nickname: &str, id: &str) {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "id": id,
+                "user_id": user_id,
+                "nickname": nickname,
+            }),
+        });
+    }
+
+    fn add_node_from_id(mut self, id: &str) -> Vec<Segment> {
         self.push(Segment {
             type_: "node".to_string(),
             data: json!({
@@ -1515,11 +1587,30 @@ impl NapCatVec for Vec<Node> {
         self
     }
 
-    fn push_forward_node(&mut self, id: &str) {
+    fn push_node_from_id(&mut self, id: &str) {
         self.push(Segment {
             type_: "node".to_string(),
             data: json!({
                 "id": id,
+            }),
+        });
+    }
+
+    fn add_node_from_content(mut self, content: Message) -> Vec<Segment> {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "content": content,
+            }),
+        });
+        self
+    }
+
+    fn push_node_from_content(&mut self, content: Message) {
+        self.push(Segment {
+            type_: "node".to_string(),
+            data: json!({
+                "content": content,
             }),
         });
     }
