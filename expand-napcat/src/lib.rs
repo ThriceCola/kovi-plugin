@@ -62,6 +62,7 @@ impl InvitedRequest {
 }
 
 impl JoinRequest {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         request_id: i64,
         requester_uin: i64,
