@@ -1,4 +1,4 @@
-use kovi::bot::runtimebot::{send_api_request_with_forget, send_api_request_with_response};
+use kovi::bot::runtimebot::send_api_request_with_response;
 use kovi::serde_json::json;
 use kovi::{
     bot::{
@@ -79,9 +79,16 @@ pub trait LagrangeApi {
         busid: i64,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn friend_poke(&self, user_id: i64);
+    fn friend_poke(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
-    fn group_poke(&self, group_id: i64, user_id: i64);
+    fn group_poke(
+        &self,
+        group_id: i64,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn friend_poke_return(
         &self,
@@ -102,7 +109,6 @@ pub trait LagrangeApi {
         is_add: bool,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 }
-
 
 impl LagrangeApi for RuntimeBot {
     fn fetch_custom_face(
@@ -310,7 +316,10 @@ impl LagrangeApi for RuntimeBot {
         send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    fn friend_poke(&self, user_id: i64) {
+    fn friend_poke(
+        &self,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "friend_poke",
             json!({
@@ -319,10 +328,14 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_api_request_with_forget(&self.api_tx, send_api);
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
-    fn group_poke(&self, group_id: i64, user_id: i64) {
+    fn group_poke(
+        &self,
+        group_id: i64,
+        user_id: i64,
+    ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
         let send_api = SendApi::new(
             "group_poke",
             json!({
@@ -332,7 +345,7 @@ impl LagrangeApi for RuntimeBot {
             &rand_echo(),
         );
 
-        send_api_request_with_forget(&self.api_tx, send_api);
+        send_api_request_with_response(&self.api_tx, send_api)
     }
 
     fn friend_poke_return(
