@@ -78,18 +78,21 @@ async fn main() {
     });
 }
 
-static HELP_MSG: &str = r#"kovi 帮助列表
+static HELP_MSG: &str = r#"📦 帮助列表
 .kovi plugin <T>: 插件管理
 .kovi acc <name> <T>: 访问控制
+.kovi status: 状态信息
 部分命令可缩写为第一个字母"#;
 
 static HELP_PLUGIN: &str = r#".kovi plugin <T>: 插件管理
+
 list: 列出所有插件
 start <name>: 启动插件
 stop <name>: 停止插件
 restart <name>: 重载插件"#;
 
 static ACC_CONTROL_PLUGIN: &str = r#".kovi acc <name> <T>: 访问控制
+
 <name>: 插件名称
 <T>:
 status: 列出插件访问控制信息
@@ -185,7 +188,7 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
     };
 
     let reply = format!(
-        "📦状态\n\
+        "📦 状态\n\
          运行时间: {}\n\
          内存使用: {:.2} MB\n\
          插件数量: {} 启用 {} 个\n\
@@ -203,17 +206,17 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
 
 fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd) {
     if plugin_is_self(plugin_name) && acc_cmd != AccControlCmd::Status {
-        e.reply("📦不允许修改CMD插件");
+        e.reply("📦 不允许修改CMD插件");
         return;
     }
     match acc_cmd {
         AccControlCmd::Enable(b) => match bot.set_plugin_access_control(plugin_name, b) {
             Ok(_) => {
-                e.reply("📦设置成功");
+                e.reply("📦 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("📦插件{}不存在", plugin_name));
+                    e.reply(format!("📦 插件{}不存在", plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
@@ -222,11 +225,11 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
         },
         AccControlCmd::SetMode(v) => match bot.set_plugin_access_control_mode(plugin_name, v) {
             Ok(_) => {
-                e.reply("📦设置成功");
+                e.reply("📦 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("📦插件{}不存在", plugin_name));
+                    e.reply(format!("📦 插件{}不存在", plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
@@ -283,7 +286,7 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                     };
 
                     let msg = format!(
-                        "📦插件{}\n访问控制：{}\n模式：{}\n群组：{}\n好友列表：{}",
+                        "📦 插件{}\n访问控制：{}\n模式：{}\n群组：{}\n好友列表：{}",
                         plugin_name, boo, mode, group_list_str, friend_list
                     );
                     e.reply(msg);
@@ -291,11 +294,11 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                 }
             }
 
-            e.reply("📦插件不存在");
+            e.reply("📦 插件不存在");
         }
         AccControlCmd::GroupIsEnable(boo) => {
             if e.is_private() {
-                e.reply("📦只能在群聊中使用");
+                e.reply("📦 只能在群聊中使用");
                 return;
             }
 
@@ -308,15 +311,23 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
             match bot.set_plugin_access_control_list(plugin_name, true, set_access) {
                 Ok(_) => {
                     let msg = if boo {
-                        format!("📦插件{}访问控制已添加{}", plugin_name, e.group_id.unwrap())
+                        format!(
+                            "📦 插件{}访问控制已添加{}",
+                            plugin_name,
+                            e.group_id.unwrap()
+                        )
                     } else {
-                        format!("📦插件{}访问控制已移除{}", plugin_name, e.group_id.unwrap())
+                        format!(
+                            "📦 插件{}访问控制已移除{}",
+                            plugin_name,
+                            e.group_id.unwrap()
+                        )
                     };
                     e.reply(msg);
                 }
                 Err(err) => match err {
                     BotError::PluginNotFound(_) => {
-                        e.reply(format!("📦插件{}不存在", plugin_name));
+                        e.reply(format!("📦 插件{}不存在", plugin_name));
                     }
                     BotError::RefExpired => {
                         panic!("CMD: Bot RefExpired");
@@ -343,7 +354,7 @@ fn process_ids(
                 vec_i64.push(v);
             }
             Err(_) => {
-                e.reply("📦设置失败");
+                e.reply("📦 设置失败");
                 return;
             }
         }
@@ -357,11 +368,11 @@ fn process_ids(
 
     match bot.set_plugin_access_control_list(plugin_name, is_group, vec_i64) {
         Ok(_) => {
-            e.reply("📦设置成功");
+            e.reply("📦 设置成功");
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦插件{}不存在", plugin_name));
+                e.reply(format!("📦 插件{}不存在", plugin_name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -372,16 +383,16 @@ fn process_ids(
 
 fn plugin_start(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
     if plugin_is_self(name) {
-        e.reply("📦这么做...，你想干嘛");
+        e.reply("📦 这么做...，你想干嘛");
         return;
     }
     match bot.enable_plugin(name) {
         Ok(_) => {
-            e.reply(format!("📦插件{}启动成功", name));
+            e.reply(format!("📦 插件{}启动成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦插件{}不存在", name));
+                e.reply(format!("📦 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -392,16 +403,16 @@ fn plugin_start(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 
 fn plugin_stop(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
     if plugin_is_self(name) {
-        e.reply("📦不允许关闭CMD插件");
+        e.reply("📦 不允许关闭CMD插件");
         return;
     }
     match bot.disable_plugin(name) {
         Ok(_) => {
-            e.reply(format!("📦插件{}关闭成功", name));
+            e.reply(format!("📦 插件{}关闭成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦插件{}不存在", name));
+                e.reply(format!("📦 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -412,16 +423,16 @@ fn plugin_stop(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 
 async fn plugin_restart(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
     if plugin_is_self(name) {
-        e.reply("📦不允许重载CMD插件");
+        e.reply("📦 不允许重载CMD插件");
         return;
     }
     match bot.restart_plugin(name).await {
         Ok(_) => {
-            e.reply(format!("📦插件{}重载成功", name));
+            e.reply(format!("📦 插件{}重载成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦插件{}不存在", name));
+                e.reply(format!("📦 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -433,11 +444,11 @@ async fn plugin_restart(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 fn plugin_status(e: &MsgEvent, bot: &RuntimeBot) {
     let plugin_info = bot.get_plugin_info().unwrap();
     if plugin_info.is_empty() {
-        e.reply("📦插件列表为空");
+        e.reply("📦 插件列表为空");
         return;
     }
 
-    let mut msg = "📦插件列表\n".to_string();
+    let mut msg = "📦 插件列表\n".to_string();
 
     plugin_info.iter().for_each(|info| {
         let boo = if info.enabled { "✅" } else { "❎" };

@@ -77,10 +77,10 @@ impl KoviArgs {
                 };
 
                 match sub_command {
-                    "plugin" => Self {
+                    "plugin" | "p" => Self {
                         command: KoviCmd::Help(HelpItem::Plugin),
                     },
-                    "acc" => Self {
+                    "acc" | "a" => Self {
                         command: KoviCmd::Help(HelpItem::Acc),
                     },
                     _ => Self {
