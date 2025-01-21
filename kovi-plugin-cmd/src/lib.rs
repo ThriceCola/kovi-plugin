@@ -2,9 +2,7 @@ use cmd::{AccControlCmd, CmdSetAccessControlList, HelpItem, KoviArgs, KoviCmd, P
 use kovi::{
     bot::{runtimebot::kovi_api::SetAccessControlList, AccessControlMode},
     error::BotError,
-    serde_json,
-    utils::load_json_data,
-    MsgEvent, PluginBuilder as P, RuntimeBot,
+    serde_json, MsgEvent, PluginBuilder as P, RuntimeBot,
 };
 use std::{
     sync::Arc,
@@ -14,10 +12,10 @@ use sysinfo::{Pid, ProcessesToUpdate, System};
 
 mod cmd;
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct CMDInfo {
-    cmd_start_with: String,
-}
+// #[derive(Debug, serde::Deserialize, serde::Serialize)]
+// struct CMDInfo {
+//     cmd_start_with: String,
+// }
 
 #[kovi::plugin]
 async fn main() {
@@ -29,15 +27,15 @@ async fn main() {
     let start_time = Arc::new(start_time);
 
     let bot = P::get_runtime_bot();
-    let data_path = bot.get_data_path();
-    let cmd = CMDInfo {
-        cmd_start_with: ".kovi".to_string(),
-    };
-    let cmd: CMDInfo = load_json_data(cmd, data_path.join("cmd.json")).unwrap();
-    let cmd = Arc::new(cmd);
-    P::on_msg(move |e| {
+    // let data_path = bot.get_data_path();
+    // let cmd = CMDInfo {
+    //     cmd_start_with: ".kovi".to_string(),
+    // };
+    // let cmd: CMDInfo = load_json_data(cmd, data_path.join("cmd.json")).unwrap();
+    // let cmd = Arc::new(cmd);
+    P::on_admin_msg(move |e| {
         let bot = bot.clone();
-        let cmd = cmd.clone();
+        // let cmd = cmd.clone();
         let start_time = start_time.clone();
         async move {
             let text = if let Some(v) = e.borrow_text() {
@@ -45,7 +43,11 @@ async fn main() {
             } else {
                 return;
             };
-            if !text.starts_with(cmd.cmd_start_with.as_str()) {
+            // if !text.starts_with(cmd.cmd_start_with.as_str()) {
+            //     return;
+            // }
+
+            if !text.starts_with(".kovi") {
                 return;
             }
 
