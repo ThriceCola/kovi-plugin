@@ -1,6 +1,6 @@
 # kovi-plugin-cmd
 
-Kovi 的框架管理插件，通过消息命令配置 Kovi。
+Kovi 的管理插件，通过消息命令配置 Kovi。
 
 使用 ```cargo kovi add cmd``` or ```cargo kovi add kovi-plugin-cmd``` 添加此插件。（记得挂载哦）
 
