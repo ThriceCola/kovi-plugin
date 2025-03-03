@@ -392,7 +392,7 @@ impl LagrangeApi for RuntimeBot {
             json!({
                 "group_id": group_id,
                 "message_id": message_id,
-                "reaction_id": code,
+                "code": code,
                 "is_add": is_add,
             }),
             &rand_echo(),
