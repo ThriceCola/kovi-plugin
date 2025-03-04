@@ -2,7 +2,7 @@ use cmd::{AccControlCmd, CmdSetAccessControlList, HelpItem, KoviArgs, KoviCmd, P
 use kovi::{
     bot::{runtimebot::kovi_api::SetAccessControlList, AccessControlMode},
     error::BotError,
-    serde_json, MsgEvent, PluginBuilder as P, RuntimeBot,
+    log, serde_json, MsgEvent, PluginBuilder as P, RuntimeBot,
 };
 use std::{
     sync::Arc,
@@ -78,22 +78,24 @@ async fn main() {
     });
 }
 
-static HELP_MSG: &str = r#"📦 帮助列表
+static HELP_MSG: &str = r#"┄ 📜 帮助列表 ┄
 .kovi plugin <T>: 插件管理
 .kovi acc <name> <T>: 访问控制
 .kovi status: 状态信息
 部分命令可缩写为第一个字母"#;
 
-static HELP_PLUGIN: &str = r#".kovi plugin <T>: 插件管理
+static HELP_PLUGIN: &str = r#"┄ 📜 插件管理 ┄:
+.kovi plugin <T>
 
+<T>:
 list: 列出所有插件
 start <name>: 启动插件
 stop <name>: 停止插件
 restart <name>: 重载插件"#;
 
-static ACC_CONTROL_PLUGIN: &str = r#".kovi acc <name> <T>: 访问控制
+static ACC_CONTROL_PLUGIN: &str = r#"┄ 📜 访问控制 ┄:
+.kovi acc <name> <T>
 
-<name>: 插件名称
 <T>:
 status: 列出插件访问控制信息
 enable: 启用插件访问控制
@@ -137,11 +139,16 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
 
     let pid = Pid::from_u32(std::process::id());
     sys.refresh_processes(ProcessesToUpdate::Some(&[pid]), true);
+    sys.refresh_memory();
 
-    let memory_usage = sys
+    let self_memory_usage = sys
         .process(pid)
         .map(|process| process.memory() as f64 / 1024.0 / 1024.0)
         .unwrap_or(0.0);
+
+    let total_memory = sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
+    let used_memory = sys.used_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
+    let memory_usage_percent = (used_memory / total_memory) * 100.0;
 
     let time_str = if days > 0 {
         format!("{}d{}h{}m{}s", days, hours, minutes, seconds)
@@ -184,21 +191,19 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
 
             msg
         }
-        None => "服务端: 无".to_string(),
+        None => "服务端: 信息获取失败".to_string(),
     };
 
+    let plugin_info_len = plugin_info.len();
+
     let reply = format!(
-        "📦 状态\n\
-         运行时间: {}\n\
-         内存使用: {:.2} MB\n\
-         插件数量: {} 启用 {} 个\n\
-         {}\n\
-         客户端: Kovi",
-        time_str,
-        memory_usage,
-        plugin_info.len(),
-        plugin_start_len,
-        onebot_info_str
+        "┄ 📑 状态 ┄\n\
+        🕑 运行时间: {time_str}\n\
+        📦 插件数量: {plugin_info_len} 启用 {plugin_start_len} 个\n\
+        🔋 内存使用: {self_memory_usage:.2}MB\n\
+        💻 系统内存:\n  {:.2}GB/{:.2}GB({:.0}%)\n\
+        🔗 {}",
+        used_memory, total_memory, memory_usage_percent, onebot_info_str
     );
 
     e.reply(reply);
@@ -206,17 +211,17 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
 
 fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd) {
     if plugin_is_self(plugin_name) && acc_cmd != AccControlCmd::Status {
-        e.reply("📦 不允许修改CMD插件");
+        e.reply("⛔ 不允许修改CMD插件");
         return;
     }
     match acc_cmd {
         AccControlCmd::Enable(b) => match bot.set_plugin_access_control(plugin_name, b) {
             Ok(_) => {
-                e.reply("📦 设置成功");
+                e.reply("✅ 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("📦 插件{}不存在", plugin_name));
+                    e.reply(format!("🔎 插件{}不存在", plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
@@ -225,11 +230,11 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
         },
         AccControlCmd::SetMode(v) => match bot.set_plugin_access_control_mode(plugin_name, v) {
             Ok(_) => {
-                e.reply("📦 设置成功");
+                e.reply("✅ 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("📦 插件{}不存在", plugin_name));
+                    e.reply(format!("🔎 插件{}不存在", plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
@@ -294,11 +299,11 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                 }
             }
 
-            e.reply("📦 插件不存在");
+            e.reply("🔎 插件不存在");
         }
         AccControlCmd::GroupIsEnable(boo) => {
             if e.is_private() {
-                e.reply("📦 只能在群聊中使用");
+                e.reply("⛔ 只能在群聊中使用");
                 return;
             }
 
@@ -312,13 +317,13 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                 Ok(_) => {
                     let msg = if boo {
                         format!(
-                            "📦 插件{}访问控制已添加{}",
+                            "✅ 插件{}访问控制已添加{}",
                             plugin_name,
                             e.group_id.unwrap()
                         )
                     } else {
                         format!(
-                            "📦 插件{}访问控制已移除{}",
+                            "✅ 插件{}访问控制已移除{}",
                             plugin_name,
                             e.group_id.unwrap()
                         )
@@ -327,7 +332,7 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                 }
                 Err(err) => match err {
                     BotError::PluginNotFound(_) => {
-                        e.reply(format!("📦 插件{}不存在", plugin_name));
+                        e.reply(format!("🔎 插件{}不存在", plugin_name));
                     }
                     BotError::RefExpired => {
                         panic!("CMD: Bot RefExpired");
@@ -338,6 +343,7 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
     }
 }
 
+/// 设置插件访问控制列表
 fn process_ids(
     v: Vec<String>,
     is_group: bool,
@@ -354,7 +360,7 @@ fn process_ids(
                 vec_i64.push(v);
             }
             Err(_) => {
-                e.reply("📦 设置失败");
+                e.reply("❎ 设置失败");
                 return;
             }
         }
@@ -368,11 +374,11 @@ fn process_ids(
 
     match bot.set_plugin_access_control_list(plugin_name, is_group, vec_i64) {
         Ok(_) => {
-            e.reply("📦 设置成功");
+            e.reply("✅ 设置成功");
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦 插件{}不存在", plugin_name));
+                e.reply(format!("🔎 插件{}不存在", plugin_name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -382,17 +388,24 @@ fn process_ids(
 }
 
 fn plugin_start(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
-    if plugin_is_self(name) {
-        e.reply("📦 这么做...，你想干嘛");
+    let name = is_not_empty_or_more_times_and_reply(e, bot, name);
+
+    let name = match name {
+        Some(v) => v,
+        None => return,
+    };
+
+    if plugin_is_self(&name) {
+        e.reply("🏳️ 这么做...，你想干嘛");
         return;
     }
-    match bot.enable_plugin(name) {
+    match bot.enable_plugin(&name) {
         Ok(_) => {
-            e.reply(format!("📦 插件{}启动成功", name));
+            e.reply(format!("✅ 插件{}启动成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦 插件{}不存在", name));
+                e.reply(format!("🔎 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -402,17 +415,24 @@ fn plugin_start(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 }
 
 fn plugin_stop(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
-    if plugin_is_self(name) {
-        e.reply("📦 不允许关闭CMD插件");
+    let name = is_not_empty_or_more_times_and_reply(e, bot, name);
+
+    let name = match name {
+        Some(v) => v,
+        None => return,
+    };
+
+    if plugin_is_self(&name) {
+        e.reply("⛔ 不允许关闭CMD插件");
         return;
     }
-    match bot.disable_plugin(name) {
+    match bot.disable_plugin(&name) {
         Ok(_) => {
-            e.reply(format!("📦 插件{}关闭成功", name));
+            e.reply(format!("✅ 插件{}关闭成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦 插件{}不存在", name));
+                e.reply(format!("🔎 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -422,17 +442,24 @@ fn plugin_stop(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 }
 
 async fn plugin_restart(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
-    if plugin_is_self(name) {
-        e.reply("📦 不允许重载CMD插件");
+    let name = is_not_empty_or_more_times_and_reply(e, bot, name);
+
+    let name = match name {
+        Some(v) => v,
+        None => return,
+    };
+
+    if plugin_is_self(&name) {
+        e.reply("⛔ 不允许重载CMD插件");
         return;
     }
-    match bot.restart_plugin(name).await {
+    match bot.restart_plugin(&name).await {
         Ok(_) => {
-            e.reply(format!("📦 插件{}重载成功", name));
+            e.reply(format!("✅ 插件{}重载成功", name));
         }
         Err(err) => match err {
             BotError::PluginNotFound(_) => {
-                e.reply(format!("📦 插件{}不存在", name));
+                e.reply(format!("🔎 插件{}不存在", name));
             }
             BotError::RefExpired => {
                 panic!("CMD: Bot RefExpired");
@@ -444,20 +471,68 @@ async fn plugin_restart(e: &MsgEvent, bot: &RuntimeBot, name: &str) {
 fn plugin_status(e: &MsgEvent, bot: &RuntimeBot) {
     let plugin_info = bot.get_plugin_info().unwrap();
     if plugin_info.is_empty() {
-        e.reply("📦 插件列表为空");
+        e.reply("🔎 插件列表为空");
         return;
     }
 
-    let mut msg = "📦 插件列表\n".to_string();
+    let mut msg = "┄ 📑 插件列表 ┄\n".to_string();
 
     plugin_info.iter().for_each(|info| {
         let boo = if info.enabled { "✅" } else { "❎" };
 
-        let msg_ = format!("{}(v{}) {}\n", info.name, info.version, boo);
+        let msg_ = format!("{} {}(v{})\n", boo, info.name, info.version);
         msg.push_str(&msg_);
     });
 
     e.reply(msg.trim());
+}
+
+/// 检查插件名是否为空或多个插件名，返回第一个插件名或None，顺带回复
+fn is_not_empty_or_more_times_and_reply(
+    e: &MsgEvent,
+    bot: &RuntimeBot,
+    name: &str,
+) -> Option<String> {
+    let names = match get_plugin_full_name(bot, name) {
+        Ok(names) => names,
+        Err(err) => {
+            log::error!("CMD: {}", err);
+            panic!("{err}")
+        }
+    };
+
+    if names.is_empty() {
+        e.reply("🔎 插件列表为空");
+        return None;
+    } else if names.len() > 1 {
+        e.reply(format!("┄ 🔎 寻找到多个插件 ┄\n{}", names.join("\n")));
+        return None;
+    }
+
+    names.into_iter().next()
+}
+
+fn get_plugin_full_name(bot: &RuntimeBot, name: &str) -> Result<Vec<String>, BotError> {
+    let plugins = match bot.get_plugin_info() {
+        Ok(plugins) => plugins,
+        Err(err) => {
+            log::error!("CMD: {}", err);
+            return Err(err);
+        }
+    };
+
+    let names = plugins
+        .iter()
+        .filter_map(|v| {
+            if v.name.contains(name) {
+                Some(v.name.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Ok(names)
 }
 
 fn plugin_is_self(name: &str) -> bool {

@@ -100,7 +100,7 @@ impl KoviArgs {
                 };
 
                 match sub_command {
-                    "list" | "status" => Self {
+                    "list" | "status" | "l" => Self {
                         command: KoviCmd::Plugin(PluginCmd::Status),
                     },
                     "start" => {
@@ -135,7 +135,7 @@ impl KoviArgs {
                             }),
                         }
                     }
-                    "restart" => {
+                    "restart" | "r" => {
                         let name = match args.next() {
                             Some(v) => v,
                             None => {
