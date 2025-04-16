@@ -210,31 +210,38 @@ async fn status(e: &MsgEvent, bot: &RuntimeBot, start_time: &u64) {
 }
 
 fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd) {
-    if plugin_is_self(plugin_name) && acc_cmd != AccControlCmd::Status {
+    let plugin_name = is_not_empty_or_more_times_and_reply(e, bot, plugin_name);
+
+    let plugin_name = match plugin_name {
+        Some(v) => v,
+        None => return,
+    };
+
+    if plugin_is_self(&plugin_name) && acc_cmd != AccControlCmd::Status {
         e.reply("⛔ 不允许修改CMD插件");
         return;
     }
     match acc_cmd {
-        AccControlCmd::Enable(b) => match bot.set_plugin_access_control(plugin_name, b) {
+        AccControlCmd::Enable(b) => match bot.set_plugin_access_control(&plugin_name, b) {
             Ok(_) => {
                 e.reply("✅ 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("🔎 插件{}不存在", plugin_name));
+                    e.reply(format!("🔎 插件{}不存在", &plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
                 }
             },
         },
-        AccControlCmd::SetMode(v) => match bot.set_plugin_access_control_mode(plugin_name, v) {
+        AccControlCmd::SetMode(v) => match bot.set_plugin_access_control_mode(&plugin_name, v) {
             Ok(_) => {
                 e.reply("✅ 设置成功");
             }
             Err(err) => match err {
                 BotError::PluginNotFound(_) => {
-                    e.reply(format!("🔎 插件{}不存在", plugin_name));
+                    e.reply(format!("🔎 插件{}不存在", &plugin_name));
                 }
                 BotError::RefExpired => {
                     panic!("CMD: Bot RefExpired");
@@ -243,16 +250,16 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
         },
         AccControlCmd::Change(change) => match change {
             CmdSetAccessControlList::GroupAdds(v) => {
-                process_ids(v, true, true, plugin_name, bot, e);
+                process_ids(v, true, true, &plugin_name, bot, e);
             }
             CmdSetAccessControlList::GroupRemoves(v) => {
-                process_ids(v, true, false, plugin_name, bot, e);
+                process_ids(v, true, false, &plugin_name, bot, e);
             }
             CmdSetAccessControlList::FriendAdds(v) => {
-                process_ids(v, false, true, plugin_name, bot, e);
+                process_ids(v, false, true, &plugin_name, bot, e);
             }
             CmdSetAccessControlList::FriendRemoves(v) => {
-                process_ids(v, false, false, plugin_name, bot, e);
+                process_ids(v, false, false, &plugin_name, bot, e);
             }
         },
         AccControlCmd::Status => {
@@ -313,7 +320,7 @@ fn acc(e: &MsgEvent, bot: &RuntimeBot, plugin_name: &str, acc_cmd: AccControlCmd
                 SetAccessControlList::Remove(e.group_id.unwrap())
             };
 
-            match bot.set_plugin_access_control_list(plugin_name, true, set_access) {
+            match bot.set_plugin_access_control_list(&plugin_name, true, set_access) {
                 Ok(_) => {
                     let msg = if boo {
                         format!(
