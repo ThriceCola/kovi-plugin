@@ -1,11 +1,7 @@
 use kovi::bot::runtimebot::send_api_request_with_response;
 use kovi::serde_json::json;
 use kovi::{
-    bot::{
-        message::Segment,
-        runtimebot::{rand_echo, RuntimeBot},
-        ApiReturn, SendApi,
-    },
+    bot::{message::Segment, runtimebot::RuntimeBot, ApiReturn, SendApi},
     Message,
 };
 use std::path::Path;

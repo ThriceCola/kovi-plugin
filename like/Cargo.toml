@@ -5,7 +5,7 @@ edition = "2021"
 keywords = ["kovi", "kovi-plugin"]
 description = "kovi 的点赞插件，可在config.json里配置。"
 license = "MPL-2.0"
-authors = ["Threkork <threkork@hotmail.com>"]
+authors = ["ThriceCola <thricecola@hotmail.com>"]
 
 [dependencies]
 kovi = ">= 0.11"

@@ -1,9 +1,9 @@
-use kovi::bot::runtimebot::{rand_echo, send_api_request_with_response};
 use kovi::bot::SendApi;
+use kovi::bot::runtimebot::send_api_request_with_response;
 use kovi::serde_json::{self, json};
 use kovi::{
-    bot::{message::Segment, runtimebot::RuntimeBot, ApiReturn},
     Message,
+    bot::{ApiReturn, message::Segment, runtimebot::RuntimeBot},
 };
 use serde::{Deserialize, Serialize};
 
@@ -427,7 +427,7 @@ pub trait NapCatApi {
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn nc_get_rkey(&self)
-        -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
+    -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send;
 
     fn get_group_shut_list(
         &self,
@@ -445,7 +445,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "user_id": user_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -454,7 +453,7 @@ impl NapCatApi for RuntimeBot {
     fn nc_get_rkey(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("nc_get_rkey", json!({}), &rand_echo());
+        let send_api = SendApi::new("nc_get_rkey", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -462,7 +461,7 @@ impl NapCatApi for RuntimeBot {
     fn nc_get_packet_status(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("nc_get_packet_status", json!({}), &rand_echo());
+        let send_api = SendApi::new("nc_get_packet_status", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -476,7 +475,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -493,7 +491,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "notice_id": notice_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -508,7 +505,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "no_cache": no_cache,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -541,11 +537,7 @@ impl NapCatApi for RuntimeBot {
             map.insert("count".to_string(), json!(i));
         }
 
-        let send_api = SendApi::new(
-            "send_forward_msg",
-            serde_json::Value::Object(map),
-            &rand_echo(),
-        );
+        let send_api = SendApi::new("send_forward_msg", serde_json::Value::Object(map));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -561,7 +553,6 @@ impl NapCatApi for RuntimeBot {
                 "brief": brief,
                 "rawData": raw_data,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -577,7 +568,6 @@ impl NapCatApi for RuntimeBot {
                 json!({
                     "group_id": group_id
                 }),
-                &rand_echo(),
             );
 
             send_api_request_with_response(&self.api_tx, send_api)
@@ -593,7 +583,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "user_id": user_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -610,7 +599,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "user_id": user_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -625,7 +613,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "user_id": user_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -640,7 +627,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -655,7 +641,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "count": count,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -664,7 +649,7 @@ impl NapCatApi for RuntimeBot {
     fn get_profile_like(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("get_profile_like", json!({}), &rand_echo());
+        let send_api = SendApi::new("get_profile_like", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -678,7 +663,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "count": count,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -687,7 +671,7 @@ impl NapCatApi for RuntimeBot {
     fn mark_all_as_read(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("_mark_all_as_read", json!({}), &rand_echo());
+        let send_api = SendApi::new("_mark_all_as_read", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -701,7 +685,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "longNick": long_nick,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -722,7 +705,6 @@ impl NapCatApi for RuntimeBot {
                 "count": count,
                 "reverseOrder": reverse_order,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -749,11 +731,7 @@ impl NapCatApi for RuntimeBot {
 
         map.insert("message".to_string(), json!(message));
 
-        let send_api = SendApi::new(
-            "send_forward_msg",
-            serde_json::Value::Object(map),
-            &rand_echo(),
-        );
+        let send_api = SendApi::new("send_forward_msg", serde_json::Value::Object(map));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -770,7 +748,6 @@ impl NapCatApi for RuntimeBot {
                 "user_id": user_id,
                 "message": message,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -788,7 +765,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "message": message,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -803,7 +779,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "words": words,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -827,7 +802,7 @@ impl NapCatApi for RuntimeBot {
             map.insert("group_id".to_string(), json!(gid));
         }
 
-        let send_api = SendApi::new("ArkSharePeer", serde_json::Value::Object(map), &rand_echo());
+        let send_api = SendApi::new("ArkSharePeer", serde_json::Value::Object(map));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -841,7 +816,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -858,7 +832,6 @@ impl NapCatApi for RuntimeBot {
                 "message_id": message_id,
                 "emoji_id": emoji_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -875,7 +848,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "message": message,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -892,7 +864,6 @@ impl NapCatApi for RuntimeBot {
                 "user_id": user_id,
                 "message": message,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -907,7 +878,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "file_id": file_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -922,7 +892,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "file": file,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -930,7 +899,7 @@ impl NapCatApi for RuntimeBot {
     fn get_friends_with_category(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("get_friends_with_category", json!({}), &rand_echo());
+        let send_api = SendApi::new("get_friends_with_category", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -948,7 +917,6 @@ impl NapCatApi for RuntimeBot {
                 "ext_status": ext_status,
                 "battery_status": battery_status,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -957,7 +925,7 @@ impl NapCatApi for RuntimeBot {
     fn get_robot_uin_range(
         &self,
     ) -> impl std::future::Future<Output = Result<ApiReturn, ApiReturn>> + Send {
-        let send_api = SendApi::new("get_robot_uin_range", json!({}), &rand_echo());
+        let send_api = SendApi::new("get_robot_uin_range", json!({}));
 
         send_api_request_with_response(&self.api_tx, send_api)
     }
@@ -975,7 +943,6 @@ impl NapCatApi for RuntimeBot {
                 "thread_count": thread_count,
                 "headers": headers,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -994,7 +961,6 @@ impl NapCatApi for RuntimeBot {
                 "file": file,
                 "name": name,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1011,7 +977,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "folder_id": folder_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1028,7 +993,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "file_id": file_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1043,7 +1007,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1058,7 +1021,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1075,7 +1037,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "folder_id": folder_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1092,7 +1053,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "name": name,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1111,7 +1071,6 @@ impl NapCatApi for RuntimeBot {
                 "file_id": file_id,
                 "busid": busid,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1126,7 +1085,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1141,7 +1099,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "message_id": message_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1156,7 +1113,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "message_id": message_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1171,7 +1127,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1188,7 +1143,6 @@ impl NapCatApi for RuntimeBot {
                 "invited_requests": invited_requests,
                 "join_requests": join_requests,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1203,7 +1157,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "image": image,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1221,7 +1174,6 @@ impl NapCatApi for RuntimeBot {
                     "group_id": group_id,
                     "message_seq": message_seq,
                 }),
-                &rand_echo(),
             )
         } else {
             SendApi::new(
@@ -1229,7 +1181,6 @@ impl NapCatApi for RuntimeBot {
                 json!({
                     "group_id": group_id,
                 }),
-                &rand_echo(),
             )
         };
 
@@ -1247,7 +1198,6 @@ impl NapCatApi for RuntimeBot {
                 "user_id": user_id,
                 "message": nodes,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1264,7 +1214,6 @@ impl NapCatApi for RuntimeBot {
                 "group_id": group_id,
                 "message": nodes,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1279,7 +1228,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "message_id": message_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1294,7 +1242,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "no_cache": no_cache,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1317,7 +1264,6 @@ impl NapCatApi for RuntimeBot {
                 "college": college,
                 "personal_note": personal_note,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1339,7 +1285,6 @@ impl NapCatApi for RuntimeBot {
                     "name": name,
                     "folder":folder
                 }),
-                &rand_echo(),
             )
         } else {
             SendApi::new(
@@ -1349,7 +1294,6 @@ impl NapCatApi for RuntimeBot {
                     "file": file,
                     "name": name,
                 }),
-                &rand_echo(),
             )
         };
 
@@ -1365,7 +1309,6 @@ impl NapCatApi for RuntimeBot {
             json!({
                 "group_id": group_id,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1384,7 +1327,6 @@ impl NapCatApi for RuntimeBot {
                 "content": content,
                 "image": image,
             }),
-            &rand_echo(),
         );
 
         send_api_request_with_response(&self.api_tx, send_api)
@@ -1404,7 +1346,6 @@ impl NapCatApi for RuntimeBot {
                     "file": file,
                     "cache": 1,
                 }),
-                &rand_echo(),
             )
         } else {
             SendApi::new(
@@ -1414,7 +1355,6 @@ impl NapCatApi for RuntimeBot {
                     "file": file,
                     "cache": 0,
                 }),
-                &rand_echo(),
             )
         };
 
